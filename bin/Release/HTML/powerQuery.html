@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" href="data:," />
+	<title>Excel Toolkit</title>
+	<script>
+		class Api {
+			constructor() {
+				this.api = chrome.webview.hostObjects.Layout;
+			}
+			async GetPqTable() {
+				let jsonString = await this.api.GetTable();
+				let json = JSON.parse(jsonString);
+				return json;
+			}
+			async GetMaxId() {
+				let maxId = await this.api.GetMaxId();
+				return maxId;
+			}
+			async Insert(name, code) {
+				let insertRowCount = await this.api.Insert(name, code);
+				return insertRowCount;
+			}
+			async Update(id, name, code) {
+				await this.api.Update(id, name, code);
+			}
+			async Remove(id) {
+				let removeRowCount = await this.api.Remove(id);
+				return removeRowCount;
+			}
+			async InsertPQ(name, code) {
+				try {
+					await this.api.InsertPQ(name, code)
+				} catch {
+					try {
+						await this.api.InsertPQVba(name, code)
+					} catch {
+						this.alert()
+					}
+				}
+			}
+			async ReadPQ() {
+				let bookPqBody;
+				try {
+					bookPqBody = await this.api.ReadPQ()
+				} catch {
+					try { bookPqBody = await this.api.ReadPQVba() }
+					catch {
+						this.alert()
+						throw new Error(`无法访问VBA工程对象！`);
+					}
+				}
+				return JSON.parse(bookPqBody);
+			}
+			alert() {
+				window.alert(`无法访问VBA工程对象！\n启用方法：\n1.文件。\n2.选项。\n3.信任中心。\n4.信任中心设置。\n5.宏设置。\n6.勾选：信任对 VBA 工程对象模型访问。\n7.重新启动Excel。`);
+			}
+		}
+		class Ele {
+			layoutButton = `<td class="layout">
+								<button class="inset" onclick="layout.InsetClick(this)">插入</button>
+								<button class="alter" onclick="layout.AlterClick(this)">编辑</button>
+								<button class="remove" onclick="layout.RemoveClick(this)">删除</button>
+								<button class="save" onclick="layout.SaveClick(this)">保存</button>
+							</td>`
+			constructor() {
+				window.addEventListener("DOMContentLoaded", () => {
+					this.pq = document.querySelector("#PQ");
+					this.pqBody = this.pq.querySelector('tbody');
+					this.pqFoot = this.pq.querySelector('tfoot');
+					this.bookPq = document.querySelector("#BookPQ");
+					this.bookPqBody = this.bookPq.querySelector('tbody');
+					this.bookPqFoot = this.bookPq.querySelector('tfoot');
+				})
+			}
+		}
+		class Layout {
+			constructor() {
+				window.layout = this;
+				this.ele = new Ele();
+				this.api = new Api();
+				this.LoadPqBody();
+			}
+			async LoadPqBody() {
+				let pqBodyList = await this.api.GetPqTable();
+				let html = ""
+				pqBodyList.forEach(row => {
+					html += `
+							<tr id="${row.id}" class="row">
+								${this.ele.layoutButton}
+								<td class="name" contenteditable="false">${row.name}</td>
+								<td class="code" contenteditable="false">${row.code}</td>
+							</tr>`
+				});
+				this.ele.pqBody.innerHTML = html;
+			}
+			async InsetClick(clickEle) {
+				let eles = this.GetRowEle(clickEle);
+				await this.api.InsertPQ(eles.eleName.textContent, eles.eleCode.textContent);
+			}
+			RemoveClick(clickEle) {
+				let ele = clickEle.parentNode.parentNode;
+				this.api.Remove(ele.id);
+				ele.remove();
+			}
+			AlterClick(clickEle) {
+				let eles = this.GetRowEle(clickEle);
+				eles.ele.classList.add('active');
+				eles.eleName.contentEditable = true;
+				eles.eleCode.contentEditable = true;
+			}
+			SaveClick(clickEle) {
+				let eles = this.GetRowEle(clickEle);
+				eles.ele.classList.remove('active');
+				eles.eleName.contentEditable = false;
+				eles.eleCode.contentEditable = false;
+				this.api.Update(eles.ele.id, eles.eleName.textContent, eles.eleCode.textContent)
+			}
+			async AddClick(clickEle, isRemove = true) {
+				let eles = this.GetRowEle(clickEle);
+				if (eles.eleName.textContent == "") { return };
+				await this.api.Insert(eles.eleName.textContent, eles.eleCode.textContent);
+				let maxId = await this.api.GetMaxId();
+				let html = `
+							<tr id="${maxId}" class="row">
+								${this.ele.layoutButton}
+								<td class="name" contenteditable="false">${eles.eleName.textContent}</td>
+								<td class="code" contenteditable="false">${eles.eleCode.textContent}</td>
+							</tr>`
+				this.ele.pqBody.innerHTML += html;
+				if (isRemove) {
+					eles.eleName.textContent = "";
+					eles.eleCode.textContent = "";
+				}
+			}
+			async LoadBookPqBody() {
+				let html = "";
+				let BookPqBodyList = await this.api.ReadPQ();
+				let i = 0;
+				BookPqBodyList.forEach(row => {
+					html += `
+							<tr id="book-${i}" class="row">
+								<td class="layout">
+									<button class="add" onclick="layout.AddClick(this,false)">添加</button>
+									<button class="alter" onclick="layout.BookAlterClick(this)">编辑</button>
+									<button class="bookInset" onclick="layout.InsetClick(this)">插入</button>
+									<button class="save" onclick="layout.BookSaveClick(this)">返回</button>
+								</td>
+								<td class="name" contenteditable="false">${row[0]}</td>
+								<td class="code" contenteditable="false">${row[1]}</td>
+							</tr>`
+					i++;
+				});
+				this.ele.bookPqBody.innerHTML = html;
+			}
+			BookAlterClick(clickEle) {
+				let eles = this.GetRowEle(clickEle);
+				eles.ele.classList.add("active");
+				eles.eleName.contentEditable = true;
+				eles.eleCode.contentEditable = true;
+			}
+			BookSaveClick(clickEle) {
+				let eles = this.GetRowEle(clickEle);
+				eles.ele.classList.remove("active");
+				eles.eleName.contentEditable = false;
+				eles.eleCode.contentEditable = false;
+			}
+			GetRowEle(clickEle) {
+				let ele = clickEle.parentNode.parentNode;
+				let eles = {
+					'ele': ele,
+					'eleName': ele.querySelector(".name"),
+					'eleCode': ele.querySelector(".code"),
+					'eleInset': ele.querySelector(".inset"),
+					'eleRemove': ele.querySelector(".remove"),
+					'eleAlter': ele.querySelector(".alter"),
+					'eleSave': ele.querySelector(".save"),
+					'eleAdd': ele.querySelector(".add")
+				}
+				return eles;
+			}
+		}
+		new Layout();
+	</script>
+	<style>
+		:root {
+			--mainColor: #3a8c56;
+			--minorColor: #4a9d66;
+			--activeColor: #3a8c56;
+			--backgroundColor: #efefef;
+			--layoutWidth: 75px;
+			--nameWidth: 120px;
+			--border-color: #b6b6b6;
+			--border-width: 0.5px;
+		}
+
+		body {
+			width: 100vw;
+			margin: 0;
+			padding: 0;
+			overflow-x: hidden;
+		}
+
+		#PQ,
+		#BookPQ {
+			border-collapse: separate;
+			border-spacing: 0;
+			width: 100%;
+			max-width: 100vw;
+			table-layout: fixed;
+
+			caption {
+				background-color: var(--mainColor);
+				color: white;
+			}
+
+			.head {
+				background-color: var(--mainColor);
+				color: white;
+
+				.layoutHead {
+					width: var(--layoutWidth);
+				}
+
+				.nameHead {
+					width: var(--nameWidth);
+				}
+
+				.codeHead {
+					width: calc(100% - var(--layoutWidth) - var(--nameWidth));
+				}
+			}
+
+			.body,
+			.foot {
+				border-style: solid;
+
+				.row,
+				.footRow {
+					background-color: var(--backgroundColor);
+
+					&>* {
+						border-style: solid;
+						border-width: var(--border-width);
+						border-color: var(--border-color);
+						box-sizing: border-box;
+					}
+
+					.layout {
+						width: var(--layoutWidth);
+
+						.inset,
+						.alter,
+						.add {
+							display: inline-block;
+						}
+
+						.save,
+						.remove,
+						.bookInset {
+							display: none;
+						}
+
+						button {
+							padding: 2px;
+							margin: 1px;
+							background-color: var(--minorColor);
+							color: white;
+							border: 1px solid #3a7d52;
+							border-radius: 5px;
+							cursor: pointer;
+
+							&:hover {
+								background-color: #3a8c56;
+							}
+						}
+					}
+
+					.name {
+						width: var(--nameWidth);
+						white-space: nowrap;
+						overflow: hidden;
+						text-overflow: ellipsis;
+					}
+
+					.code {
+						width: calc(100% - var(--layoutWidth) - var(--nameWidth));
+						min-width: 200px;
+						white-space: nowrap;
+						overflow: hidden;
+						text-overflow: ellipsis;
+					}
+
+					.name,
+					.code {
+						&[contenteditable="true"] {
+							border: 1px solid #E0E0E0;
+							background-color: #f8fff8;
+
+							&:focus {
+								border-color: #3a8c5582;
+								outline: none;
+								white-space: pre-wrap;
+							}
+						}
+					}
+				}
+
+				.row.active {
+					.layout {
+
+						.inset,
+						.alter,
+						.add {
+							display: none;
+						}
+
+						.save,
+						.remove,
+						.bookInset {
+							display: inline-block;
+						}
+					}
+
+					.code,
+					.name {
+						white-space: pre-wrap;
+						overflow-wrap: break-word;
+						word-break: break-word;
+
+						&[contenteditable="true"] {
+							border: 1px solid #E0E0E0;
+							background-color: #f8fff8;
+
+							&:focus {
+								border-color: #3a8c5582;
+								outline: none;
+								white-space: pre-wrap;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		#BookPQ {
+			margin-top: 30px;
+		}
+	</style>
+</head>
+
+<body>
+	<table id="PQ">
+		<caption class="title">
+			Power Query 查询管理
+		</caption>
+		<thead class="head">
+			<tr>
+				<th class="layoutHead">控制</th>
+				<th class="nameHead">查询名称</th>
+				<th class="codeHead">查询代码</th>
+			</tr>
+		</thead>
+		<tbody class="body">
+			<!-- <tr id="1" class="row">
+				<td class="layout">
+					<button class="inset" onclick="layout.InsetClick(this)">插入</button>
+					<button class="alter" onclick="layout.AlterClick(this)">编辑</button>
+					<button class="remove" onclick="layout.RemoveClick(this)">删除</button>
+					<button class="save" onclick="layout.SaveClick(this)">保存</button>
+				</td>
+				<td class="name" contenteditable="false">查询</td>
+				<td class="code" contenteditable="false">let x = {1..9} in x</td>
+			</tr>
+			<tr id="2" class="row">
+				<td class="layout">
+					<button class="inset" onclick="layout.InsetClick(this)">插入</button>
+					<button class="alter" onclick="layout.AlterClick(this)">编辑</button>
+					<button class="remove" onclick="layout.RemoveClick(this)">删除</button>
+					<button class="save" onclick="layout.SaveClick(this)">保存</button>
+				</td>
+				<td class="name" contenteditable="false">查询1</td>
+				<td class="code" contenteditable="false">let x = {1..9} in x</td>
+			</tr>
+		</tbody>
+		<tfoot class="foot">
+			<tr class="footRow">
+				<td class="layout">
+					<button class="add" onclick="layout.AddClick(this)">添加查询</button>
+				</td>
+				<td class="name" contenteditable="true"></td>
+				<td class="code" contenteditable="true"></td>
+			</tr> -->
+		</tfoot>
+	</table>
+	<table id="BookPQ">
+		<caption class="title"></caption>
+		<thead class="head">
+			<th class="layoutHead">控制</th>
+			<th class="nameHead">查询名称</th>
+			<th class="codeHead">查询代码</th>
+		</thead>
+		<tbody class="body">
+			<!-- <tr id="2" class="row">
+				<td class="layout">
+					<button class="add" onclick="layout.AddClick(this,false)">添加</button>
+					<button class="alter" onclick="layout.BookAlterClick(this)">编辑</button>
+					<button class="bookInset" onclick="layout.InsetClick(this)">插入</button>
+					<button class="save" onclick="layout.BookSaveClick(this)">返回</button>
+				</td>
+				<td class="name" contenteditable="false">查询1</td>
+				<td class="code" contenteditable="false">let x = {1..9} in x</td>
+			</tr> -->
+		</tbody>
+		<tfoot class="foot">
+			<tr class="footRow">
+				<td colspan="1" class="layout"><button onclick="layout.LoadBookPqBody()">获取查询</button></td>
+			</tr>
+		</tfoot>
+	</table>
+</body>
+
+</html>

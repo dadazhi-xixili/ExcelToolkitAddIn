@@ -1,0 +1,5 @@
+bin/Release/*.xml
+bin/Debug/
+.vs
+obj
+packages

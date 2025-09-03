@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+	<meta charset="UTF-8">
+	<link rel="icon" href="data:," />
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+
+		table {
+			/* 盒模型设置 */
+			box-sizing: border-box;
+			/* 边框和内边距计入元素宽度 */
+			border-collapse: separate;
+			/* 边框分离模式 */
+			border-spacing: 0;
+			/* 单元格间距为0 */
+			width: 100%;
+			min-width: 500px;
+			font-family: "Segoe UI", "微软雅黑", sans-serif;
+			/* 字体设置 */
+
+			/* 表头样式 */
+			thead {
+				background-color: #3a8c56;
+				/* 深绿色背景 */
+				color: #f8f8f8;
+				/* 浅色文字 */
+				--radiusPx: 4px;
+				/* 圆角大小变量 */
+				--hover: #4caf500d;
+
+				/* 悬停颜色变量(带透明度) */
+				tr {
+					&:first-child {
+						th {
+
+							&:first-child {
+								border-top-left-radius: var(--radiusPx);
+							}
+
+							&:last-child {
+								border-top-right-radius: var(--radiusPx);
+							}
+						}
+					}
+
+					&:nth-child(2) {
+						font-size: 12px;
+					}
+				}
+			}
+
+			/* 表格主体样式 */
+			tbody,
+			tfoot {
+
+				tr {
+					height: 36px;
+
+					/* 表格单元格垂直居中 */
+					/* 单元格通用样式 */
+					td {
+						border-width: 1px;
+						border-color: #E0E0E0;
+						border-style: solid;
+
+						/* 前3列特殊样式(复选框列) */
+						&:nth-child(1),
+						&:nth-child(2),
+						&:nth-child(3) {
+
+							border-width: 1px;
+							text-align: center;
+							vertical-align: middle;
+							/* 内容居中 */
+							width: 40px;
+							min-width: 35px;
+							/* 固定宽度50px */
+
+							/* 复选框自定义样式 */
+							input[type="checkbox"] {
+								appearance: none;
+								/* 去除默认样式 */
+								width: 16px;
+								/* 宽度 */
+								height: 16px;
+								/* 高度 */
+								border: 2px solid #999;
+								/* 灰色边框 */
+								border-radius: 50%;
+								/* 圆形 */
+								cursor: pointer;
+								/* 手型指针 */
+								position: relative;
+								/* 相对定位(为伪元素定位) */
+								display: inline-block;
+								/* 行内块显示 */
+								vertical-align: middle;
+								/* 垂直居中 */
+								transition: all 0.2s;
+								/* 过渡动画 */
+
+								/* 复选框选中状态 */
+								&:checked {
+									border-color: #3a8c56;
+									/* 绿色边框 */
+									background-color: #3a8c56;
+									/* 绿色背景 */
+
+									/* 选中状态中心白点(伪元素) */
+									&::after {
+										content: '';
+										/* 必须内容 */
+										position: absolute;
+										/* 绝对定位 */
+										top: 2px;
+										/* 上偏移 */
+										left: 2px;
+										/* 左偏移 */
+										width: 8px;
+										/* 宽度 */
+										height: 8px;
+										/* 高度 */
+										background: white;
+										/* 白色 */
+										border-radius: 50%;
+										/* 圆形 */
+									}
+								}
+							}
+						}
+
+						/* 第4列(名称列) */
+						&:nth-child(4) {
+							width: 20%;
+							/* 宽度占20% */
+							max-width: 300px;
+						}
+
+						&:nth-child(5) {
+							max-width: 70%;
+							max-width: 900px;
+						}
+
+						&[contenteditable="true"] {
+							border-width: 1px;
+							border-color: #E0E0E0;
+							border-style: solid;
+
+							&:focus {
+								border-color: #3a8c5582;
+								outline: 0px;
+								outline: none;
+							}
+						}
+					}
+
+					/* 行悬停效果 */
+					&:hover {
+						background-color: #e0f0e8;
+						/* 浅绿色背景 */
+					}
+
+					/* 最后一行特殊处理 */
+					&:last-child {
+
+						td {
+
+							/* 左下角圆角 */
+							&:first-child {
+								border-bottom-left-radius: var(--radiusPx);
+							}
+
+							/* 右下角圆角 */
+							&:last-child {
+								border-bottom-right-radius: var(--radiusPx);
+							}
+						}
+					}
+
+				}
+			}
+
+			.table-action-cell {
+				.table-action-btn {
+					border: none;
+					background: none;
+					cursor: pointer;
+					padding: 0px;
+					margin: 0 4px;
+					border-radius: 50%;
+					transition: transform 0.2s ease;
+
+					&:hover {
+						transform: scale(1.1);
+					}
+
+					&:active {
+						transform: scale(0.95);
+					}
+
+					svg {
+						display: block;
+
+						circle:first-child {
+							fill: white;
+							stroke-width: 1.5;
+						}
+
+						path {
+							stroke-width: 2.2;
+							stroke-linecap: round;
+						}
+
+						.hover-layer {
+							fill: transparent;
+							transition: fill 0.3s ease;
+						}
+					}
+				}
+
+				#addrow {
+					svg {
+						circle:first-child {
+							stroke: #3a8c55;
+						}
+
+						path {
+							stroke: #3a8c55;
+						}
+
+						.hover-layer:hover {
+							fill: rgba(58, 140, 85, 0.1);
+						}
+					}
+				}
+			}
+			.table-action-cell {
+				.table-action-btn {
+					border: none;
+					background: none;
+					cursor: pointer;
+					padding: 0px;
+					margin: 0 4px;
+					border-radius: 50%;
+					transition: transform 0.2s ease;
+
+					&:hover {
+						transform: scale(1.1);
+					}
+
+					&:active {
+						transform: scale(0.95);
+					}
+
+					svg {
+						display: block;
+
+						circle:first-child {
+							fill: white;
+							stroke-width: 1.5;
+						}
+
+						path {
+							stroke-width: 2.2;
+							stroke-linecap: round;
+						}
+
+						.hover-layer {
+							fill: transparent;
+							transition: fill 0.3s ease;
+						}
+					}
+				}
+
+				#delrow {
+					svg {
+						circle:first-child {
+							stroke: #c45c40;
+						}
+
+						path {
+							stroke: #c45c40;
+						}
+
+						.hover-layer:hover {
+							fill: rgba(196, 92, 64, 0.1);
+						}
+					}
+				}
+			}
+		}
+	</style>
+	<script>
+		class Ele {
+			constructor() {
+				this.table = document.getElementsByTagName("table")[0];
+				this.tbody = this.table.tBodies[0];
+			}
+			get rows() {
+				return this.table.rows;
+			}
+			get rowLast() {
+				return this.rows[this.rows.length - 1];
+			}
+		}
+		class Api {
+			constructor() {
+				this.api = chrome.webview.hostObjects.Layout;
+				this.GetAll = this.api.GetTable;
+			}
+			async Update(id, key, value) {
+				let isUp = await this.api.Update(id, JSON.stringify({ [key]: value }));
+				if (isUp) return true;
+				return false;
+			}
+			async Remove(ids){
+				let idsType = typeof ids;
+				switch(idsType){
+					case "string":
+						break;
+					case "list":
+						break;
+				}
+			}
+		}
+		class Layout {
+			constructor() {
+				window.addEventListener("DOMContentLoaded", () => {
+					window.layout = this;
+					this.api = new Api();
+					this.ele = new Ele();
+					this.Init();
+				})
+			}
+			async Init() {
+				let data = await this.api.GetAll();
+				this.data = await JSON.parse(data);
+				this.LoadTable();
+			}
+			LoadTable() {
+				let html = '';
+				this.data.forEach((x, i) => {
+					html +=
+						`
+					<tr id="${x.id}" class="row">
+						<td class="isInApp"><input type="checkbox" ${x.isInApp ? "checked" : ""} onclick="layout.IsInClick(this)"></td>
+						<td class="isInBook"><input type="checkbox" ${x.isInBook ? "checked" : ""} onclick="layout.IsInClick(this)"></td>
+						<td class="isInSheet"><input type="checkbox" ${x.isInSheet ? "checked" : ""} onclick="layout.IsInClick(this)"></td>
+						<td contenteditable="true">${x.name}</td>
+						<td contenteditable="true">${x.fun}</td>
+					</tr>`
+				})
+				this.ele.tbody.innerHTML = html;
+			}
+			IsInClick(ele) {
+				let id = ele.parentElement.parentElement.id;
+				let key = ele.parentElement.className;
+				let value = ele.checked ? 1 : 0;
+				this.api.Update(id, key, value);
+			}
+
+		}
+		new Layout();
+	</script>
+	<title>Excel Toolkit</title>
+</head>
+
+<body>
+	<table class="controlPane">
+		<thead>
+			<tr>
+				<th colspan="3" class="isIn">激活范围</th>
+				<th rowspan="2" class="name">名称</th>
+				<th rowspan="2" class="func">表达式</th>
+			</tr>
+			<tr>
+				<th class="app">全局</th>
+				<th class="book">工作簿</th>
+				<th class="sheet">工作表</th>
+			</tr>
+		</thead>
+		<tbody class="data">
+			<tr id="row1" class="row">
+				<td>
+					<input type="checkbox" checked>
+				</td>
+				<td>
+					<input type="checkbox">
+				</td>
+				<td>
+					<input type="checkbox">
+				</td>
+				<td contenteditable="true"></td>
+				<td contenteditable="true"></td>
+				
+			</tr>
+			<tr id="row2" class="row">
+				<td>
+					<input type="checkbox">
+				</td>
+				<td>
+					<input type="checkbox">
+				</td>
+				<td>
+					<input type="checkbox">
+				</td>
+				<td contenteditable="true">测试名称1</td>
+				<td contenteditable="true">=A1+B1</td>
+			</tr>
+			<tr id="row3" class="row">
+				<td>
+					<input type="checkbox">
+				</td>
+				<td>
+					<input type="checkbox">
+				</td>
+				<td>
+					<input type="checkbox">
+				</td>
+				<td contenteditable="true">测试名称2</td>
+				<td contenteditable="true">=SUM(C1:C10)</td>
+			</tr>
+		<tfoot>
+			<tr id="rowLast" class="row">
+				<td colspan="5" class="table-action-cell">
+					<button id="addrow" class="table-action-btn">
+						<svg width="20" height="20" viewBox="0 0 32 32">
+							<circle cx="16" cy="16" r="14" />
+							<path d="M16 10V22M10 16H22" />
+							<circle cx="16" cy="16" r="15" class="hover-layer" />
+						</svg>
+					</button>
+					<button id="delrow" class="table-action-btn">
+						<svg width="20" height="20" viewBox="0 0 32 32">
+							<circle cx="16" cy="16" r="14" />
+							<path d="M10 16H22" />
+							<circle cx="16" cy="16" r="15" class="hover-layer" />
+						</svg>
+					</button>
+				</td>
+			</tr>
+		</tfoot>
+		</tbody>
+	</table>
+</body>
+
+</html>
