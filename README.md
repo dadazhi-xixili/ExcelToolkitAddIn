@@ -1,0 +1,2 @@
+# ExcelToolkitAddIn
+个人项目的ExcelToolkit的Excel插件版本，除提供函数查询外，另外提供了更多对Excel操作的功能。VSTO作为基础框架，Webviw提供用户控件交互。另编写了Xml类，提供动态构造Ribbon的能力。后续会添加更多相关功能。
