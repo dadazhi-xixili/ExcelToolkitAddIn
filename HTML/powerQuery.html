@@ -35,11 +35,12 @@
 				try {
 					await this.api.InsertPQ(name, code)
 				} catch {
-					try {
-						await this.api.InsertPQVba(name, code)
-					} catch {
-						this.alert()
-					}
+					//try {
+					//	await this.api.InsertPQVba(name, code)
+					//} catch {
+                    this.alert();
+                    throw new Error(`无法访问VBA工程对象！`);
+					//}
 				}
 			}
 			async ReadPQ() {
@@ -47,11 +48,11 @@
 				try {
 					bookPqBody = await this.api.ReadPQ()
 				} catch {
-					try { bookPqBody = await this.api.ReadPQVba() }
-					catch {
-						this.alert()
-						throw new Error(`无法访问VBA工程对象！`);
-					}
+					//try { bookPqBody = await this.api.ReadPQVba() }
+					//catch {
+					this.alert();
+					throw new Error(`无法访问VBA工程对象！`);
+					//}
 				}
 				return JSON.parse(bookPqBody);
 			}
@@ -394,7 +395,7 @@
 				<td class="name" contenteditable="true"></td>
 				<td class="code" contenteditable="true"></td>
 			</tr> -->
-		</tfoot>
+		<!--</tfoot>-->
 	</table>
 	<table id="BookPQ">
 		<caption class="title"></caption>
