@@ -2,6 +2,7 @@
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using System;
+using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -25,32 +26,37 @@ namespace ExcelToolkitAddIn
         }
 
         public string appPath = AppDomain.CurrentDomain.BaseDirectory;
-        public System.Windows.Forms.UserControl control;
-        public CustomTaskPane controlTaskPane;
+        public UserControl control;
         public string htmlPath;
         public Task initTask;
         public Layout layout = Globals.ThisAddIn.layout;
         public Pane pane;
         public Task paneTask;
+        public Form webViewForm;
 
         public WebView(Pane pane, int size = 1200)
         {
             layout.webView = this;
-            control = new System.Windows.Forms.UserControl();
-            Dock = DockStyle.Fill;
-            controlTaskPane = layout.addIn.CustomTaskPanes.Add(control, "Excel Toolkit");
+            control = new UserControl();
+            control.Dock = DockStyle.Fill;
+            webViewForm = new Form
+            {
+                Text = @"Excel Toolkit",
+                Width = size,
+                Height = 800
+            };
+            webViewForm.Icon = new Icon(Path.Combine(appPath, "Resource", "ExcelToolkit.ico"));
+            webViewForm.Controls.Add(control);
             control.Controls.Add(this);
-            SetSize(size);
+            this.Dock = DockStyle.Fill;
             initTask = InitWebView(pane);
-            controlTaskPane.Visible = false;
+            webViewForm.FormClosing += WebViewFormCloseClick;
         }
-
         public new bool Visible
         {
-            get => controlTaskPane.Visible;
-            set => controlTaskPane.Visible = value;
+            get => webViewForm.Visible;
+            set => webViewForm.Visible = value;
         }
-
         private async Task InitWebView(Pane pane)
         {
             this.pane = pane;
@@ -60,58 +66,26 @@ namespace ExcelToolkitAddIn
             await EnsureCoreWebView2Async(env);
             paneTask = LoadHtml(pane);
         }
-
         public Task LoadHtml(Pane pane)
         {
             CoreWebView2.AddHostObjectToScript("Layout", layout.LoadPane(pane));
             this.pane = pane;
             htmlPath = Path.Combine(appPath, "HTML", pane + ".html");
             string html = File.ReadAllText(htmlPath);
-            
+
             NavigateToString(html);
             return Task.CompletedTask;
         }
-
         public async Task RunJavaScript(string jsCode)
         {
             await initTask;
             await paneTask;
             await CoreWebView2.ExecuteScriptAsync($"layout.{jsCode}");
         }
-
-        public void SetSize(int width)
+        private void WebViewFormCloseClick(object sender, FormClosingEventArgs e)
         {
-            controlTaskPane.Width = width;
+            e.Cancel = true;
+            webViewForm.Hide();
         }
-
-        //public class ExcelJavaScriptFunctionsWebView : WebView2
-        //{
-        //    public string appPath = AppDomain.CurrentDomain.BaseDirectory;
-        //    public ExcelJavaScriptFunctionsWebView(bool isDebug = false)
-        //    {
-        //        Visible = false;
-
-        //        if (isDebug)
-        //        {
-        //            Visible = true;
-        //            UserControl control = new UserControl();
-        //            Dock = DockStyle.Fill;
-        //            CustomTaskPane controlTaskPane =  Globals.ThisAddIn.layout.addIn.CustomTaskPanes.Add(control, "ExcelJavaScriptFunctionsWebView");
-        //            control.Controls.Add(this);
-        //            controlTaskPane.Visible = true;
-        //            controlTaskPane.Width = 200;
-        //        }
-        //        _ = InitWebView();
-        //    }
-        //    private async Task InitWebView()
-        //    {
-        //        string htmlFilePath = Path.Combine(appPath, "HTML", "ExcelJavaScriptFunction.html");
-        //        string userFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ExcelToolkitWebView2");
-        //        var env = await CoreWebView2Environment.CreateAsync(null, userFolder);
-        //        await EnsureCoreWebView2Async(env);
-        //        string html = File.ReadAllText(htmlFilePath);
-        //        NavigateToString(html);  
-        //    }
-        //}
     }
 }

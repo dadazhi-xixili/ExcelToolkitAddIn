@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -162,6 +163,54 @@ namespace ExcelToolkitAddIn
                 queries.Add(Name: safeName, Formula: safeCode);
             }
         }
+
+        public string ReadPQ()
+        {
+            dynamic book = layout.app.ActiveWorkbook;
+            dynamic query = book.Queries;
+            int count = query.Count;
+            if (count == 0) return "[]";
+            string[][] output = new string[count][];
+            int i = 0;
+            foreach (dynamic q in query)
+            {
+                output[i] = new string[] { q.Name, q.Formula };
+                i++;
+            }
+
+            return JsonSerializer.Serialize(output);
+        }
+        public string ReadAllPQ()
+        {
+            dynamic app = layout.app;
+            List<string[]> allQueries = new List<string[]>();
+            foreach (dynamic workbook in app.Workbooks)
+            {
+                try
+                {
+                    dynamic queries = workbook.Queries;
+                    int count = queries.Count;
+                    if (count <= 0) continue;
+                    foreach (dynamic query in queries)
+                    {
+                        allQueries.Add(new string[]
+                        {
+                            query.Name,
+                            query.Formula
+                        });
+                    }
+                }
+                catch { continue; }
+            }
+
+            if (allQueries.Count > 0)
+            {
+                return JsonSerializer.Serialize(allQueries);
+            }
+            return "[]";
+        }
+
+        #region 调用PowerQuery备用Vba方法
         //public void InsertPqVba(string name, string code)
         //{
         //    name = name.Replace("\"", "\"\"");
@@ -185,26 +234,6 @@ namespace ExcelToolkitAddIn
         //    Vba.RunModule(book, "UpsertPQ");
         //    Vba.RemoveModule(book, "tempPQ");
         //}
-        public string ReadPQ()
-        {
-            dynamic book = layout.app.ActiveWorkbook;
-            dynamic query = book.Queries;
-            int count = query.Count;
-
-            if (count == 0)
-                return "[]";
-
-            string[][] output = new string[count][];
-            int i = 0;
-            foreach (dynamic q in query)
-            {
-                output[i] = new string[] { q.Name, q.Formula };
-                i++;
-
-            }
-
-            return JsonSerializer.Serialize(output);
-        }
         //public string ReadPQVba()
         //{
         //    Workbook book = layout.app.ActiveWorkbook;
@@ -249,6 +278,9 @@ namespace ExcelToolkitAddIn
         //    }
         //    return JsonSerializer.Serialize(output);
         //}
+
+
+        #endregion
 
         #endregion
     }

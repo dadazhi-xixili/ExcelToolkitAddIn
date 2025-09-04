@@ -42,7 +42,7 @@ namespace ExcelToolkitAddIn
             Query query = new Query();
             layout.panes[WebView.Pane.Query] = query;
             level1 = query.GetLevel1();
-
+            //Xml.IControl closeButton = new Xml.Button("关闭", "关闭控件", "", "","");
             Xml.IControl buttonPQ = new Xml.Button("PQ查询", "PQ查询", "PowerQueryCheckClick", "large", "ViewDocumentMap");
             //Xml.IControl buttonName = new Xml.Button("名称管理", "名称管理", "NameClick", "large", "NameDefine");
             Xml.Group groupName = new Xml.Group("工具", "工具", buttonPQ);
@@ -60,6 +60,14 @@ namespace ExcelToolkitAddIn
 
         #region CheckedBox交互
 
+        public void CloseButtonClick(Office.IRibbonControl control)
+        {
+            _ = control;
+            if (webView != null)
+            {
+                webView.Visible = false;
+            }
+        }
         public bool GetChecked(Office.IRibbonControl control)
         {
             if (isChecks.TryGetValue(control.Id, out bool isValue))
@@ -172,12 +180,10 @@ namespace ExcelToolkitAddIn
             if (webView.pane != pane)
             {
                 webView.LoadHtml(pane);
-                webView.SetSize(800);
-                webView.controlTaskPane.Visible = true;
+                webView.Visible = true;
             }
             else
             {
-                webView.SetSize(800);
                 webView.Visible = !webView.Visible;
             }
         }
