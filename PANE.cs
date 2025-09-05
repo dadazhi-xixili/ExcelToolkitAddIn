@@ -200,7 +200,7 @@ namespace ExcelToolkitAddIn
                         });
                     }
                 }
-                catch { continue; }
+                catch { }
             }
 
             if (allQueries.Count > 0)
